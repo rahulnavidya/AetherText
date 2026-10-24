@@ -5,11 +5,16 @@ on:
     types: [published]
   workflow_dispatch:
     inputs:
-      tag_name:
-        description: 'Existing release tag to build (for example v2.0.0)'
+      release_tag:
+        description: 'GitHub Release tag to attach build assets to (for example v2.0.0)'
         type: string
         required: true
         default: 'v2.0.0'
+      source_ref:
+        description: 'Branch or commit to build; use main to build the current fix for an existing release'
+        type: string
+        required: true
+        default: 'main'
 
 permissions:
   contents: write
@@ -19,15 +24,18 @@ jobs:
     name: Build Windows x64 installer and portable ZIP
     runs-on: windows-latest
     steps:
-      - name: Check out source for the selected release tag
-        uses: actions/checkout@v4
+      - name: Check out source
+        uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag_name || github.ref }}
+          # For a newly published release, build the exact tagged source. For a manual
+          # run, build the selected branch/commit while attaching assets to release_tag.
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.source_ref || github.ref_name }}
 
       - name: Set up Node.js for regression tests
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
+          package-manager-cache: false
 
       - name: Run AetherText tests
         run: npm test
@@ -42,14 +50,14 @@ jobs:
           }
 
       - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
       - name: Read release version
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag_name || github.ref_name }}
+          RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag || github.ref_name }}
         run: |
           $ErrorActionPreference = 'Stop'
           $version = $env:RELEASE_TAG -replace '^v', ''
@@ -98,10 +106,10 @@ jobs:
           }
           $lines | Set-Content -Path 'artifacts/SHA256SUMS.txt' -Encoding ascii
 
-      - name: Attach downloads to this GitHub Release
-        uses: softprops/action-gh-release@v2.3.4
+      - name: Attach downloads to the selected GitHub Release
+        uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event.release.tag_name || inputs.tag_name || github.ref_name }}
+          tag_name: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag || github.ref_name }}
           files: |
             artifacts/AetherText-Setup-x64.exe
             artifacts/AetherText-Portable-x64.zip
