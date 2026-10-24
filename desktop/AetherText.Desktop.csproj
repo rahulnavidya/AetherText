@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AetherText</AssemblyName>
+    <RootNamespace>AetherText.Desktop</RootNamespace>
+    <ApplicationIcon>AetherText.ico</ApplicationIcon>
+    <Version>2.0.0</Version>
+    <Company>AetherText Contributors</Company>
+    <Product>AetherText</Product>
+    <Description>A lightweight local-first text and Markdown editor.</Description>
+    <Copyright>Copyright © AetherText Contributors</Copyright>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+
+  <!-- Ship the existing vanilla web app as local content beside the native host. -->
+  <ItemGroup>
+    <Content Include="../index.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest">
+      <Link>wwwroot/index.html</Link>
+    </Content>
+    <Content Include="../*.js" Exclude="../sw.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest">
+      <Link>wwwroot/%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="sw-desktop.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest">
+      <Link>wwwroot/sw.js</Link>
+    </Content>
+    <Content Include="../*.css" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest">
+      <Link>wwwroot/%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="../*.webmanifest" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest">
+      <Link>wwwroot/%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="../assets/**/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest">
+      <Link>wwwroot/assets/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+</Project>

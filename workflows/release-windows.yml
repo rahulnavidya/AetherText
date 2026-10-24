@@ -1,0 +1,103 @@
+name: Build Windows desktop release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  windows-x64:
+    name: Build Windows x64 installer and portable ZIP
+    runs-on: windows-latest
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js for regression tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run AetherText tests
+        run: npm test
+
+      - name: Check JavaScript syntax
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-ChildItem -Path . -Filter '*.js' -File | ForEach-Object {
+            node --check $_.FullName
+            if ($LASTEXITCODE -ne 0) { throw "JavaScript syntax check failed: $($_.Name)" }
+          }
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Read release version
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Use a stable release tag such as v2.0.0. Got: $version"
+          }
+          "AETHERTEXT_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Publish self-contained Windows app
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet publish desktop/AetherText.Desktop.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:Version=$env:AETHERTEXT_VERSION `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o artifacts/publish
+          if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
+          Copy-Item desktop/README-Windows.txt artifacts/publish/README.txt
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler was not found at $iscc" }
+          & $iscc "/DAppVersion=$env:AETHERTEXT_VERSION" 'desktop/installer.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed.' }
+
+      - name: Create portable ZIP and checksums
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Compress-Archive -Path 'artifacts/publish/*' -DestinationPath 'artifacts/AetherText-Portable-x64.zip' -CompressionLevel Optimal
+          $assets = @('artifacts/AetherText-Setup-x64.exe', 'artifacts/AetherText-Portable-x64.zip')
+          $lines = foreach ($asset in $assets) {
+            $hash = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $(Split-Path $asset -Leaf)"
+          }
+          $lines | Set-Content -Path 'artifacts/SHA256SUMS.txt' -Encoding ascii
+
+      - name: Attach downloads to this GitHub Release
+        uses: softprops/action-gh-release@v2.3.4
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            artifacts/AetherText-Setup-x64.exe
+            artifacts/AetherText-Portable-x64.zip
+            artifacts/SHA256SUMS.txt
+          fail_on_unmatched_files: true
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
