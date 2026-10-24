@@ -1,0 +1,10 @@
+{
+  "name": "aethertext",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A local-first, no-build multi-format text editor and preview PWA",
+  "scripts": {
+    "test": "node --test"
+  }
+}

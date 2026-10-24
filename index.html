@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en" data-app="aethertext">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" id="theme-color-meta" content="#f6f5f1">
+  <meta name="description" content="A lightweight local-first multi-format editor for text, Markdown, HTML, CSS, source files, and safe local previews with automatic session recovery.">
+  <title>AetherText — a lightweight multi-format editor</title>
+  <link rel="icon" href="assets/aethertext.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body data-theme="classic-writer" data-appearance="light" data-appearance-mode="system" data-preview-style="file" data-font-id="system">
+  <div class="app-shell">
+    <header class="topbar" id="topbar">
+      <a class="brand" href="#" aria-label="AetherText home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="brand-name">Aether<span>Text</span></span>
+      </a>
+      <div class="topbar-center">
+        <button class="palette-trigger" id="open-palette" type="button" aria-haspopup="dialog" aria-keyshortcuts="Control+K">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"></circle><path d="m16 16 4.2 4.2"></path></svg>
+          <span>Find anything</span><kbd>Ctrl K</kbd>
+        </button>
+      </div>
+      <div class="topbar-actions">
+        <span class="save-state" id="save-state" role="status"><span class="save-dot"></span><span id="save-label">Local workspace</span></span>
+        <button class="icon-button mobile-view-toggle" id="toggle-mobile-preview" type="button" aria-label="Show preview" title="Show rendered preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></button>
+        <button class="icon-button" id="toggle-reference" type="button" aria-label="Toggle reference browser" title="Reference browser (Ctrl+Shift+R)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"></rect><path d="M8 4v16M11.5 8h5M11.5 11h5"></path></svg>
+        </button>
+        <button class="icon-button" id="open-files" type="button" aria-label="Open local text files" title="Open local text files (Ctrl+O)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2 2H20a1.5 1.5 0 0 1 1.5 1.5v7a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-8a2.5 2.5 0 0 1 2.5-2.5Z"></path><path d="M12 12v5m-2.5-2.5L12 12l2.5 2.5"></path></svg></button>
+        <button class="icon-button" id="open-settings" type="button" aria-label="Open settings" title="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="m19.4 15 .1.1 1.1.9-1.5 2.6-1.4-.6a7.6 7.6 0 0 1-1.7 1l-.2 1.5h-3l-.2-1.5a7.6 7.6 0 0 1-1.7-1l-1.4.6-1.5-2.6 1.1-.9a7.4 7.4 0 0 1 0-2l-1.1-.9 1.5-2.6 1.4.6a7.6 7.6 0 0 1 1.7-1l.2-1.5h3l.2 1.5a7.6 7.6 0 0 1 1.7 1l1.4-.6 1.5 2.6-1.1.9a7.4 7.4 0 0 1 0 2Z" transform="translate(-1 -1) scale(1.05)"></path></svg>
+        </button>
+        <button class="primary-button" id="export-file" type="button" title="Export active file (Ctrl+S)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 18v3h16v-3"></path></svg>
+          <span>Export</span>
+        </button>
+      </div>
+    </header>
+
+    <nav class="tabbar" aria-label="Open files" id="tabbar">
+      <div class="tabs-list" id="tabs-list"></div>
+      <button class="new-tab-button" id="new-tab" type="button" aria-label="Create a new file" title="New file (Ctrl+N)"><span aria-hidden="true">+</span></button>
+      <div class="tabbar-spacer"></div>
+      <span class="workspace-label"><span class="workspace-label-dot"></span>PRIVATE WORKSPACE</span>
+    </nav>
+
+    <main class="workspace" id="workspace">
+      <section class="editor-pane pane" aria-label="Text editor">
+        <div class="pane-header editor-pane-header">
+          <div class="pane-heading"><span class="pane-icon source-icon" aria-hidden="true">✳</span><span>Source</span><span class="pane-subtitle" id="source-type-label">MARKDOWN</span></div>
+          <div class="pane-tools">
+            <button class="subtle-button" id="insert-heading" type="button" title="Insert a heading">H₁</button>
+            <button class="subtle-button" id="insert-bold" type="button" title="Bold selection"><strong>B</strong></button>
+            <button class="subtle-button" id="insert-link" type="button" title="Insert link">↗</button>
+            <button class="subtle-button" id="open-find" type="button" title="Find and replace (Ctrl+F)">⌕</button>
+            <button class="subtle-button" id="open-snippets" type="button" title="Insert a reusable snippet">{ }</button>
+            <button class="subtle-button" id="open-history" type="button" title="Document version history">↶</button>
+            <span class="tool-divider"></span>
+            <button class="pane-icon-button" id="focus-editor" type="button" title="Focus editor" aria-label="Focus editor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"></path></svg></button>
+          </div>
+        </div>
+        <div class="editor-wrap" id="editor-wrap">
+          <div class="editor-mirror" id="editor-mirror" aria-hidden="true"></div>
+          <textarea id="editor" class="editor-source" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="soft" aria-label="Markdown source" placeholder="Start with a thought…" aria-describedby="editor-hint"></textarea>
+          <span id="editor-hint" class="sr-only">Write Markdown here. Your session is saved automatically on this device.</span>
+          <div class="autocomplete-popup" id="autocomplete-popup" role="listbox" aria-label="HTML tag suggestions" hidden></div>
+        </div>
+        <div class="pane-footer editor-footer">
+          <span><span class="shortcut-key">⌘</span> or <span class="shortcut-key">Ctrl</span> + K <span class="footer-muted">to command</span></span>
+          <span class="footer-muted" id="line-indicator">Ln 1, Col 1</span>
+        </div>
+      </section>
+
+      <div class="pane-seam" aria-hidden="true"><span></span></div>
+
+      <section class="preview-pane pane" aria-label="Browser-rendered document preview">
+        <div class="pane-header preview-pane-header">
+          <div class="pane-heading"><span class="pane-icon preview-icon" aria-hidden="true">◈</span><span id="preview-pane-title">Preview</span><span class="pane-subtitle" id="preview-style-badge">FILE CSS</span></div>
+          <div class="pane-tools">
+            <span class="live-indicator"><span></span> LIVE</span>
+            <select id="viewport-select" class="viewport-select" aria-label="Preview viewport" title="Preview viewport size">
+              <option value="responsive">Auto</option><option value="desktop">Desktop</option><option value="laptop">Laptop</option><option value="tablet">Tablet</option><option value="mobile">Mobile</option>
+            </select>
+            <button class="pane-icon-button" id="export-html" type="button" title="Export rendered HTML" aria-label="Export rendered HTML"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5M4 8v13h12M10 13h6M10 17h6"></path></svg></button>
+            <button class="pane-icon-button preview-js-toggle" id="toggle-preview-js" type="button" disabled aria-pressed="false" title="No executable JavaScript detected in this document" aria-label="No executable JavaScript detected in this document">JS —</button>
+            <button class="pane-icon-button" id="toggle-preview-style" type="button" title="Switch to Aether Theme preview" aria-label="Switch to Aether Theme preview"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="12" height="15" rx="2"></rect><path d="M8 8h4M8 11h4M9 2h11v14"></path><path d="m17 18 2 2 3-4"></path></svg></button>
+            <button class="pane-icon-button" id="reload-browser-preview" type="button" title="Reload rendered document" aria-label="Reload browser preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"></path><path d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3"></path></svg></button>
+            <button class="pane-icon-button" id="copy-markdown" type="button" title="Copy source text" aria-label="Copy source text"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path></svg></button>
+          </div>
+        </div>
+        <div class="browser-chrome" aria-label="Preview browser location">
+          <span class="browser-lock" aria-hidden="true">◉</span>
+          <span class="browser-address" id="preview-address">aethertext://preview/Welcome.md</span>
+          <span class="browser-chip">LOCAL</span>
+        </div>
+        <div class="preview-scroll browser-frame-shell" id="preview-scroll" tabindex="0" aria-label="Browser preview viewport">
+          <iframe id="browser-preview-frame" title="Rendered HTML and CSS document" sandbox="allow-scripts allow-popups" referrerpolicy="no-referrer"></iframe>
+          <div id="nonbrowser-preview-surface" class="nonbrowser-preview-surface" hidden></div>
+        </div>
+        <div class="pane-footer preview-footer">
+          <span id="preview-file-name">Welcome.md</span>
+          <span class="preview-footer-right"><span class="render-pip"></span> <span id="preview-js-status">No document JavaScript detected</span></span>
+        </div>
+      </section>
+
+      <aside class="reference-panel" id="reference-panel" aria-label="Reference browser" aria-hidden="true">
+        <div class="reference-header">
+          <div><span class="reference-title">Reference desk</span><span class="reference-subtitle">A little room for research</span></div>
+          <button class="pane-icon-button" id="close-reference" type="button" aria-label="Close reference browser" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg></button>
+        </div>
+        <form class="reference-form" id="reference-form">
+          <label class="sr-only" for="reference-url">Reference URL</label>
+          <span class="url-lock" aria-hidden="true">↗</span>
+          <input id="reference-url" type="text" inputmode="url" placeholder="https://developer.mozilla.org" autocomplete="url">
+          <button type="submit" aria-label="Open URL">Go</button>
+        </form>
+        <div class="reference-shortcuts" aria-label="Quick reference links">
+          <button type="button" data-url="https://developer.mozilla.org/">MDN</button>
+          <button type="button" data-url="https://commonmark.org/help/">Markdown guide</button>
+          <button type="button" data-url="https://en.wikipedia.org/">Wikipedia</button>
+        </div>
+        <div class="iframe-shell">
+          <iframe id="reference-frame" title="Reference website" sandbox="allow-forms allow-scripts" referrerpolicy="no-referrer" loading="lazy" src="about:blank"></iframe>
+          <div class="reference-empty" id="reference-empty"><div class="reference-empty-mark">↗</div><strong>Bring a reference closer.</strong><p>Enter a URL above to open a page alongside your draft.</p><small>Some websites block embedding. That’s their security policy, not a problem with AetherText.</small></div>
+        </div>
+        <div class="reference-footnote">Sandboxed view · third-party pages may not embed</div>
+      </aside>
+    </main>
+
+    <footer class="statusbar" id="statusbar">
+      <div class="status-left"><span class="status-ready"><span></span> READY</span><span class="status-separator"></span><span id="theme-label">Classic Writer</span><span class="status-separator"></span><span id="font-label">System UI</span></div>
+      <div class="status-right"><span id="word-count">0 words</span><span class="status-separator"></span><span id="char-count">0 characters</span><span class="status-separator"></span><span class="count-badge" id="reading-time">1 min read</span></div>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="palette-backdrop" hidden>
+    <section class="command-palette" id="command-palette" role="dialog" aria-modal="true" aria-labelledby="palette-title">
+      <h2 class="sr-only" id="palette-title">Command palette</h2>
+      <div class="palette-search-row"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"></circle><path d="m16 16 4.2 4.2"></path></svg><input id="palette-search" type="text" placeholder="What would you like to do?" autocomplete="off" spellcheck="false"><kbd>ESC</kbd></div>
+      <div class="palette-section-label">SUGGESTED COMMANDS</div>
+      <div class="palette-results" id="palette-results" role="listbox" aria-label="Commands"></div>
+      <div class="palette-footer"><span>↑ ↓ to navigate</span><span><kbd>ENTER</kbd> to select</span><span class="palette-footer-right">AetherText Command Deck</span></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="settings-backdrop" hidden>
+    <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-heading"><div><span class="eyebrow">MAKE YOURSELF AT HOME</span><h2 id="settings-title">Settings</h2><p>Your writing space, your rules.</p></div><button class="pane-icon-button" id="close-settings" type="button" aria-label="Close settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></div>
+      <div class="settings-body">
+        <section class="settings-section"><div class="settings-section-heading"><span class="settings-symbol">◐</span><div><h3>Appearance</h3><p>Set the mood for your next thought.</p></div></div>
+          <label class="field-label" for="appearance-select">Overall appearance</label>
+          <select id="appearance-select" class="settings-select">
+            <option value="system">Follow system preference</option>
+            <option value="light">Light mode</option>
+            <option value="dark">Dark mode</option>
+          </select>
+          <p class="field-help appearance-help">Every theme supports both appearances. Terminal and Cyberpunk also have dedicated light palettes.</p>
+          <label class="field-label" for="theme-select">Workspace theme</label><select id="theme-select" class="settings-select">
+            <option value="classic-writer">Classic Writer</option><option value="typewriter-focus">Typewriter Focus</option><option value="terminal-hacker">Terminal / Hacker</option><option value="academic-paper">Academic Paper</option><option value="zen-distraction-free">Zen / Distraction-free</option><option value="magazine-layout">Magazine Layout</option><option value="dashboard-notion">Dashboard / Notion-style</option><option value="cyberpunk-neon">Cyberpunk / Neon</option><option value="parchment-warm">Parchment / Warm</option><option value="high-contrast">High-contrast accessibility</option>
+          </select>
+          <label class="field-label" for="preview-style-select">Preview styling</label>
+          <select id="preview-style-select" class="settings-select">
+            <option value="file">File CSS — preserve the document's design</option>
+            <option value="aether">Aether Theme — adaptive, clean styling</option>
+          </select>
+          <p class="field-help preview-style-help">File CSS uses the document's embedded, linked, and inline styling. Aether Theme ignores that styling and adapts the content to your selected workspace theme and appearance.</p>
+        </section>
+        <section class="settings-section"><div class="settings-section-heading"><span class="settings-symbol">✦</span><div><h3>Fine customization</h3><p>Small visual and editing adjustments beyond the broad themes.</p></div></div>
+          <label class="field-label" for="accent-color">Accent color</label>
+          <div class="accent-control-row"><input id="accent-color" type="color" value="#657b68" aria-label="Custom accent color"><div class="accent-swatches" aria-label="Accent color presets">
+            <button class="accent-swatch" type="button" data-accent-color="#657b68" style="--swatch-color:#657b68" aria-label="Sage accent" title="Sage"></button>
+            <button class="accent-swatch" type="button" data-accent-color="#4c83e8" style="--swatch-color:#4c83e8" aria-label="Blue accent" title="Blue"></button>
+            <button class="accent-swatch" type="button" data-accent-color="#9b6de3" style="--swatch-color:#9b6de3" aria-label="Violet accent" title="Violet"></button>
+            <button class="accent-swatch" type="button" data-accent-color="#db4f83" style="--swatch-color:#db4f83" aria-label="Rose accent" title="Rose"></button>
+            <button class="accent-swatch" type="button" data-accent-color="#e08a38" style="--swatch-color:#e08a38" aria-label="Amber accent" title="Amber"></button>
+            <button class="accent-swatch" type="button" data-accent-color="#159b91" style="--swatch-color:#159b91" aria-label="Teal accent" title="Teal"></button>
+            <button class="accent-swatch" type="button" data-accent-color="#d4a017" style="--swatch-color:#d4a017" aria-label="Gold accent" title="Gold"></button>
+            <button class="accent-swatch" type="button" data-accent-color="#ef5b52" style="--swatch-color:#ef5b52" aria-label="Coral accent" title="Coral"></button>
+          </div><button class="secondary-button" id="reset-accent" type="button">Theme default</button></div>
+          <p class="field-help">Changes app accents, links, focus rings, selection highlights, and preview fallback accents.</p>
+          <label class="field-label" for="editor-font-size">Editor text size <output id="editor-font-size-value" for="editor-font-size">12 px</output></label>
+          <input id="editor-font-size" class="range-input" type="range" min="10" max="20" step="1" value="12">
+          <label class="field-label" for="editor-line-height">Editor line spacing</label>
+          <select id="editor-line-height" class="settings-select"><option value="compact">Compact</option><option value="comfortable" selected>Comfortable</option><option value="spacious">Spacious</option></select>
+          <label class="field-label" for="editor-tab-size">Tab indentation</label>
+          <select id="editor-tab-size" class="settings-select"><option value="2">2 spaces</option><option value="4" selected>4 spaces</option><option value="8">8 spaces</option></select>
+          <label class="assistance-toggle"><input id="editor-word-wrap" type="checkbox" checked><span><strong>Soft-wrap long lines</strong><small>Wrap long lines to the pane width instead of scrolling horizontally.</small></span></label>
+          <label class="assistance-toggle"><input id="reduce-motion" type="checkbox"><span><strong>Reduce interface motion</strong><small>Limit transitions and animations throughout the app.</small></span></label>
+        </section>
+        <section class="settings-section"><div class="settings-section-heading"><span class="settings-symbol">⌘</span><div><h3>Editor assistance</h3><p>Small IDE-like conveniences while typing HTML and Markdown.</p></div></div>
+          <label class="assistance-toggle"><input id="autocomplete-enabled" type="checkbox" checked><span><strong>HTML tag autocomplete</strong><small>Suggest tags when you type <code>&lt;</code>; accept with Enter or Tab.</small></span></label>
+          <label class="assistance-toggle"><input id="auto-close-enabled" type="checkbox" checked><span><strong>Auto-close tags and punctuation</strong><small>Typing <code>&lt;span&gt;</code> adds <code>&lt;/span&gt;</code>; quotes and brackets are paired too.</small></span></label>
+        </section>
+        <section class="settings-section"><div class="settings-section-heading"><span class="settings-symbol">Aa</span><div><h3>Typography</h3><p>20 quick picks up front; load local families only when you need them.</p></div></div>
+          <label class="field-label" for="font-select">Editor and interface font</label><select id="font-select" class="settings-select"><optgroup label="Everyday &amp; UI"><option value="system">System UI</option><option value="segoe-ui">Segoe UI</option><option value="arial">Arial</option><option value="helvetica-now-display">Helvetica Now Display</option><option value="manrope">Manrope</option></optgroup><optgroup label="Display &amp; geometric"><option value="poppins">Poppins</option><option value="montserrat">Montserrat</option><option value="outfit">Outfit</option><option value="futura">Futura</option><option value="century-gothic">Century Gothic</option><option value="bebas-neue">Bebas Neue</option></optgroup><optgroup label="Serif"><option value="georgia">Georgia</option><option value="garamond">Garamond</option><option value="bodoni-mt">Bodoni MT</option></optgroup><optgroup label="Monospace"><option value="monospace">Monospace (system)</option><option value="consolas">Consolas</option><option value="cascadia-code">Cascadia Code</option><option value="ibm-plex-mono">IBM Plex Mono</option><option value="fira-code">Fira Code</option><option value="bitstream-vera-sans-mono">Bitstream Vera Sans Mono</option></optgroup></select>
+          <div class="font-api-row"><button class="secondary-button" id="discover-fonts" type="button">Load installed fonts</button><span class="field-help" id="font-api-status">Optional: loads your device’s font-family names only when clicked. Duplicate weights are grouped into one choice; the initial list stays lightweight.</span></div>
+          <div class="font-filter-row" id="font-filter-row" hidden><label class="field-label" for="local-font-filter">Find an installed font</label><input class="settings-select" id="local-font-filter" type="search" placeholder="Type a font name to filter the list" autocomplete="off" spellcheck="false"></div>
+        </section>
+        <section class="settings-section"><div class="settings-section-heading"><span class="settings-symbol">⌁</span><div><h3>Session & privacy</h3><p>Your drafts stay in this browser’s local database.</p></div></div>
+          <div class="privacy-row"><div><strong>Automatic session recovery</strong><span>Tabs, drafts, cursor and scroll positions are saved on this device.</span></div><span class="privacy-pill"><span></span> ON</span></div>
+          <div class="danger-zone"><div><strong>Clear saved session</strong><span>Remove the saved workspace and start fresh. This can’t be undone.</span></div><button class="danger-button" id="clear-session" type="button">Clear session</button></div>
+        </section>
+        <div class="settings-note"><span>✦</span> No account. No cloud. No analytics. Just your words.</div>
+      </div>
+      <div class="settings-footer"><span> AetherText <span class="version-tag">v2.0.0</span></span><button class="primary-button" id="done-settings" type="button">Done</button></div>
+    </section>
+  </div>
+
+
+  <input id="import-files" type="file" multiple hidden accept=".md,.markdown,.mdown,.mkd,.mdx,.txt,.text,.html,.htm,.xhtml,.css,.scss,.sass,.less,.js,.mjs,.cjs,.ts,.tsx,.jsx,.json,.jsonc,.ipynb,.xml,.xsl,.xslt,.rss,.atom,.yaml,.yml,.toml,.csv,.tsv,.svg,.py,.pyw,.sh,.bash,.zsh,.ps1,.bat,.cmd,.sql,.ini,.cfg,.conf,.env,.log,.properties,.java,.kt,.kts,.c,.h,.cc,.cpp,.cxx,.hpp,.hh,.hxx,.go,.rs,.swift,.rb,.lua,.pl,.pm,.r,.php,.phtml,.vue,.svelte,.astro,.makefile,.dockerfile,text/*,*/*">
+
+  <div class="modal-backdrop" id="new-file-backdrop" hidden>
+    <section class="tool-modal new-file-modal" role="dialog" aria-modal="true" aria-labelledby="new-file-title">
+      <div class="modal-heading"><div><span class="eyebrow">NEW WORKSPACE TAB</span><h2 id="new-file-title">Create a file</h2><p>Choose a format. AetherText keeps the source editable and chooses the right preview for it.</p></div><button class="pane-icon-button" id="close-new-file" type="button" aria-label="Close new file dialog">×</button></div>
+      <form id="new-file-form">
+        <div class="tool-modal-body">
+          <label class="field-label" for="new-file-name">File name</label>
+          <input id="new-file-name" class="settings-select" type="text" value="Untitled.md" maxlength="120" required autocomplete="off" spellcheck="false">
+          <label class="field-label" for="new-file-type">File format</label>
+          <select id="new-file-type" class="settings-select">
+            <option value="markdown">Markdown (.md)</option>
+            <option value="text">Plain text (.txt)</option>
+            <option value="html">HTML document (.html)</option>
+            <option value="css">CSS stylesheet (.css)</option>
+            <option value="javascript">JavaScript source (.js)</option>
+            <option value="json">JSON (.json)</option>
+            <option value="xml">XML (.xml)</option>
+            <option value="yaml">YAML (.yaml)</option>
+            <option value="csv">CSV data (.csv)</option>
+            <option value="svg">SVG source (.svg)</option>
+            <option value="python">Python source (.py)</option>
+            <option value="sql">SQL source (.sql)</option>
+            <option value="log">Log file (.log)</option>
+            <option value="other">Other text file (choose extension)</option>
+          </select>
+          <p class="field-help">Markdown renders as Markdown; HTML opens as a live browser document; CSS, JavaScript, JSON, and other source formats stay inert and readable in source preview. JavaScript files do not execute on their own.</p>
+        </div>
+        <div class="tool-modal-footer"><button class="secondary-button" id="cancel-new-file" type="button">Cancel</button><button class="primary-button" type="submit">Create file</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="find-backdrop" hidden>
+    <section class="tool-modal find-modal" role="dialog" aria-modal="true" aria-labelledby="find-title">
+      <div class="modal-heading"><div><span class="eyebrow">EDITOR TOOLS</span><h2 id="find-title">Find &amp; Replace</h2><p>Search the current document without leaving your place.</p></div><button class="pane-icon-button" id="close-find" type="button" aria-label="Close find and replace">×</button></div>
+      <div class="tool-modal-body">
+        <label class="field-label" for="find-input">Find</label>
+        <div class="find-input-row"><input id="find-input" class="settings-select" type="search" placeholder="Text or regular expression" autocomplete="off"><button class="secondary-button" id="find-next" type="button">Find next</button></div>
+        <label class="field-label" for="replace-input">Replace with</label>
+        <input id="replace-input" class="settings-select" type="text" placeholder="Replacement text">
+        <div class="find-options"><label><input id="find-case-sensitive" type="checkbox"> Match case</label><label><input id="find-whole-word" type="checkbox"> Whole word</label><label><input id="find-regex" type="checkbox"> Regex</label></div>
+        <div class="find-status" id="find-status" aria-live="polite">Enter text to begin searching.</div>
+      </div>
+      <div class="tool-modal-footer"><button class="secondary-button" id="replace-one" type="button">Replace</button><button class="primary-button" id="replace-all" type="button">Replace all</button></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="snippets-backdrop" hidden>
+    <section class="tool-modal snippets-modal" role="dialog" aria-modal="true" aria-labelledby="snippets-title">
+      <div class="modal-heading"><div><span class="eyebrow">REUSABLE BUILDING BLOCKS</span><h2 id="snippets-title">Snippet Library</h2><p>Insert a Markdown, HTML, or CSS starter at your cursor.</p></div><button class="pane-icon-button" id="close-snippets" type="button" aria-label="Close snippets">×</button></div>
+      <div class="snippet-filter-row"><label class="sr-only" for="snippet-category">Snippet category</label><select id="snippet-category" class="settings-select"><option>All</option><option>Markdown</option><option>HTML</option><option>CSS</option></select><input id="snippet-search" class="settings-select" type="search" placeholder="Filter snippets…" autocomplete="off"></div>
+      <div class="snippet-list" id="snippet-list"></div>
+      <div class="tool-modal-footer"><span class="field-help">Choose a snippet to insert it at the current cursor.</span><button class="secondary-button" id="close-snippets-footer" type="button">Done</button></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="history-backdrop" hidden>
+    <section class="tool-modal history-modal" role="dialog" aria-modal="true" aria-labelledby="history-title">
+      <div class="modal-heading"><div><span class="eyebrow">LOCAL RECOVERY</span><h2 id="history-title">Document History</h2><p id="history-subtitle">Restore a previous saved version of this tab.</p></div><button class="pane-icon-button" id="close-history" type="button" aria-label="Close history">×</button></div>
+      <div class="history-actions"><span class="field-help">Up to 40 versions per document and 120 overall are retained on this device.</span><button class="secondary-button" id="create-checkpoint" type="button">Create checkpoint</button></div>
+      <div class="history-list" id="history-list" aria-live="polite"><p class="empty-state">Loading document history…</p></div>
+      <div class="tool-modal-footer"><span class="field-help">History is stored locally in this browser profile.</span><button class="secondary-button" id="close-history-footer" type="button">Done</button></div>
+    </section>
+  </div>
+
+  <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+  <noscript><div class="noscript-warning">AetherText needs JavaScript enabled to edit, preview and save documents.</div></noscript>
+</body>
+</html>
