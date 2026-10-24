@@ -70,7 +70,7 @@ internal sealed class MainForm : Form
                 webRoot,
                 CoreWebView2HostResourceAccessKind.Allow);
 
-            _webView.CoreWebView2.DefaultBackgroundColor = Color.FromArgb(17, 17, 27);
+            _webView.DefaultBackgroundColor = Color.FromArgb(17, 17, 27);
             _webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
             _webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
             _webView.CoreWebView2.Settings.IsStatusBarEnabled = false;
